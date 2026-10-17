@@ -11,7 +11,7 @@
 | 类别 | 选型 | 理由 |
 |------|------|------|
 | 语言 | TypeScript (strict) | 完善的类型推导，编译器辅助重构 |
-| 运行时 | Node.js 18+ | 内置 `fetch`，无需额外 HTTP 依赖 |
+| 运行时 | Node.js ^20.19.0 / ^22.12.0 / >=23 | 与 yargs engines 一致，内置 `fetch` |
 | CLI 框架 | yargs | 声明式命令定义，自动生成帮助，内置 shell 补全 |
 | 输出着色 | chalk | 终端颜色分量轻、API 简洁 |
 | 测试 | node:test + node:assert | Node 内置，零依赖 |
@@ -43,8 +43,7 @@
 
 ```
 memo-api/
-├── bin/
-│   └── memo-api.js           # package.json bin 入口，加载 dist/index.js
+├── dist/index.js            # 编译后的 package.json bin 入口，发布 dist/
 ├── src/
 │   ├── index.ts              # 入口：创建 program，注册子命令，parseAsync
 │   ├── client.ts             # HTTP 客户端：auth、base URL、错误映射
@@ -591,3 +590,7 @@ import('../dist/index.js')
   - [ ] 数组参数重复 flag
   - [ ] 数组参数 stdin `-` 模式
   - [ ] 最大参数限制校验（1000）
+
+### 测试配置隔离（2026-10-18）
+
+npm test 在导入业务模块前加载 test/helpers/isolated-home.mjs。每个测试进程及其 Node CLI 子进程使用独立临时 home；退出时仅移除自身创建的目录，不读取、备份、删除或恢复真实用户配置。单独运行配置、认证、OIDC 测试也会先导入隔离模块。test/home-isolation.test.ts 用合成原配置验证写入不会覆盖它，并验证子进程 home 独立。生产配置位置与认证优先级保持原样。

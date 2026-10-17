@@ -8,7 +8,7 @@
 npm install -g @maimemo/memo-api
 ```
 
-要求 Node.js >= 18。
+要求 Node.js 20.19+（20.x）、22.12+（22.x）或 23+，与 yargs 的运行时要求一致。
 
 ## 设置
 

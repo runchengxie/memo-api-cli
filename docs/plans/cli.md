@@ -1321,3 +1321,7 @@ await program.parseAsync(process.argv)
 10. **Token 注入**：`program.hook('preAction', ...)` 统一解析 Token，无需在每个 action 中重复
 11. **输出格式集成测试**：`test/commands/output-format.test.ts` 通过 MockAgent 模拟 API + 调用 `printColumns`/`printJson` + 捕获 stdout/stderr 断言输出内容，覆盖列式截断/折叠/字段选择/JSON 输出/错误输出
 12. **列式数据传递**：所有命令 handler 使用 `{ ...item }` 展开完整 API 响应字段，`printColumns` 通过 `flattenValue` 将数组 join、对象 JSON.stringify、null/undefined 转空字符串，字段名以 `time`/`date` 结尾时 ISO 日期转本地时区。未指定 `--fields` 时按 `src/lib/default-fields.ts` 配置仅展示核心字段，超过 200 字符截断追加 `...`
+
+## 测试与发布约束补充（2026-10-18）
+
+配置与认证测试必须在临时 home 中执行，使用 test/helpers/isolated-home.mjs，不能通过删除真实 memo-api.json 来准备 fixture。该隔离只作用于测试进程，不增加生产配置参数。CLI 发布入口为编译后的 dist/index.js，仅发布 dist/；运行时范围与 yargs 一致，使用 Node.js ^20.19.0 || ^22.12.0 || >=23。

@@ -5,7 +5,7 @@
 `@maimemo/memo-api` is the official CLI tool for the Maimemo (墨墨) Open API. It provides a command-line interface—`memo-api`—for managing vocabulary notes, interpretations, phrases, notepads, and study records on the Maimemo platform.
 
 - **Language**: TypeScript (strict mode, ES2022 target)
-- **Runtime**: Node.js >= 18
+- **Runtime**: Node.js ^20.19.0 || ^22.12.0 || >=23 (matches yargs)
 - **Module system**: ESM (`"type": "module"`)
 - **CLI framework**: [yargs](https://yargs.js.org/) v18
 - **Package manager**: npm
@@ -25,7 +25,7 @@ src/
   types/          -- TypeScript type definitions mirroring protobuf API schemas
 test/             -- Test files mirroring src/ structure
 dist/             -- Compiled JS output (tsc, git-ignored)
-bin/memo-api.js   -- CLI binary entry (shebang, re-exports dist/index.js)
+dist/index.js     -- Compiled CLI binary entry, selected by package.json.bin
 ```
 
 All API requests go to `https://open.maimemo.com/open/`. OIDC authentication requests go to `https://accounts.maimemo.com/oidc`. The CLI follows a `memo-api <resource> <action>` pattern.
@@ -38,7 +38,7 @@ All API requests go to `https://open.maimemo.com/open/`. OIDC authentication req
 npm install
 ```
 
-- Requires Node.js >= 18
+- Requires Node.js ^20.19.0 || ^22.12.0 || >=23
 - No `.env` file needed; the tool reads API tokens from `~/.config/memo-api.json` (field `apiToken` or OIDC `at`/`rt`), the `MAIMEMO_API_TOKEN` environment variable, or the `-T`/`--token` CLI flag
 
 ---
@@ -67,6 +67,8 @@ npm test             # Run all tests (node test runner + tsx loader)
 ```
 
 All tests use Node.js built-in `node:test` and `node:assert/strict`. HTTP calls in tests use `undici.MockAgent` to mock fetch responses — no real network calls are made.
+
+`npm test` preloads `test/helpers/isolated-home.mjs` before configuration imports. It gives every test process and spawned Node CLI its own temporary home and removes only that directory on exit. Configuration/auth tests also import it directly for individual runs. Never remove or replace the user's real `~/.config/memo-api.json` to run tests. For other direct invocations, add `--import ./test/helpers/isolated-home.mjs` before the test file.
 
 **Test file conventions**:
 - Unit tests: `test/*.test.ts`, `test/lib/*.test.ts`
@@ -143,7 +145,7 @@ echo '{"spelling":"apple"}' | memo-api voc get
 
 - **Build**: `npm run build` → `tsc` → outputs to `dist/`
 - **Publish**: `npm publish` (auto-runs `npm run build` via `prepublishOnly`)
-- **Published files**: only `dist/` and `bin/` (specified in `package.json.files`)
+- **Published files**: only `dist/` (specified in `package.json.files`); the executable is `dist/index.js`
 - **CI/CD**: No CI pipeline is configured in this repository
 
 ---
