@@ -1,3 +1,4 @@
+import "../helpers/isolated-home.mjs";
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { MockAgent, setGlobalDispatcher, getGlobalDispatcher } from "undici";

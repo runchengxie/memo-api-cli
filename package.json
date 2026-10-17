@@ -23,7 +23,7 @@
     "build": "tsc",
     "cli": "tsx src/index.ts",
     "dev": "tsc --watch",
-    "test": "node --import tsx --test test/*.test.ts test/**/*.test.ts",
+    "test": "node --import ./test/helpers/isolated-home.mjs --import tsx --test test/*.test.ts test/**/*.test.ts",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -40,7 +40,7 @@
     "undici": "^7.12.0"
   },
   "engines": {
-    "node": ">=18"
+    "node": "^20.19.0 || ^22.12.0 || >=23"
   },
   "files": [
     "dist"
