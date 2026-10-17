@@ -78,13 +78,13 @@ All tests use Node.js built-in `node:test` and `node:assert/strict`. HTTP calls 
 
 **Running specific tests**:
 ```bash
-node --import tsx --test test/output.test.ts                        # Single file
-node --import tsx --test --test-name-pattern="printColumns" test/output.test.ts   # Matching names
+node --import ./test/helpers/isolated-home.mjs --import tsx --test test/output.test.ts
+node --import ./test/helpers/isolated-home.mjs --import tsx --test --test-name-pattern="printColumns" test/output.test.ts
 ```
 
 **Coverage**:
 ```bash
-node --import tsx --experimental-test-coverage --test test/**/*.test.ts
+node --import ./test/helpers/isolated-home.mjs --import tsx --experimental-test-coverage --test test/**/*.test.ts
 ```
 
 **Writing new tests**:
