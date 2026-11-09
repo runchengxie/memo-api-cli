@@ -1327,3 +1327,7 @@ await program.parseAsync(process.argv)
 10. **Token 注入**：`program.hook('preAction', ...)` 统一解析 Token，无需在每个 action 中重复
 11. **输出格式集成测试**：`test/commands/output-format.test.ts` 通过 MockAgent 模拟 API + 调用 `printColumns`/`printJson` + 捕获 stdout/stderr 断言输出内容，覆盖列式截断/折叠/字段选择/JSON 输出/错误输出
 12. **列式数据传递**：所有命令 handler 使用 `{ ...item }` 展开完整 API 响应字段，`printColumns` 通过 `flattenValue` 将数组 join、对象 JSON.stringify、null/undefined 转空字符串，字段名以 `time`/`date` 结尾时 ISO 日期转本地时区。未指定 `--fields` 时按 `src/lib/default-fields.ts` 配置仅展示核心字段，超过 200 字符截断追加 `...`
+
+## 测试与发布约束补充（2026-11-09）
+
+配置与认证测试通过 test/helpers/isolated-config.mjs 预加载显式 MEMO_API_CONFIG_PATH 隔离；各进程使用独立临时文件，忽略继承的配置路径及 Token，不修改用户 home 或生产认证逻辑。现有逐测试配置覆盖继续生效；MockAgent 禁止真实 HTTP。回归测试覆盖合成原配置字节保留、父子进程隔离和未预加载时的生产路径契约。CLI 发布入口保持 dist/index.js，仅发布 dist/；运行时范围按当前锁定依赖使用 Node.js ^20.19.0 || ^22.12.0 || >=23。
