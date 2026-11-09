@@ -1,142 +1,146 @@
 # memo-api
 
-墨墨开放 API 命令行工具。通过命令行管理词汇助记、释义、短语、生词本和学习记录。
+English | [简体中文](README.zh-CN.md)
 
-## 安装
+A command-line client for the Maimemo Open API. Manage vocabulary mnemonics, interpretations, phrases, notepads, and study records from your terminal.
+
+## Installation
 
 ```bash
 npm install -g @maimemo/memo-api
 ```
 
-要求 Node.js >= 18。
+Requires Node.js 20.19+ (20.x), 22.12+ (22.x), or 23+, matching the yargs runtime requirements.
 
-## 设置
+## Setup
 
-工具支持四种方式提供 API Token（优先级从高到低）：
+The tool accepts credentials from four sources, in order of priority:
 
-1. **命令行参数**：`-T` 或 `--token`
-2. **环境变量**：`MAIMEMO_API_TOKEN`
-3. **配置文件**：`~/.config/memo-api.json`，内容为 `{ "apiToken": "你的Token" }`
-4. **OIDC 登录**：通过 `memo-api auth login` 登录，自动获取并保存凭证
+1. **Command-line flag**: `-T` or `--token`
+2. **Environment variable**: `MAIMEMO_API_TOKEN`
+3. **Configuration file**: `~/.config/memo-api.json`, containing `{ "apiToken": "YOUR_TOKEN" }`
+4. **OIDC login**: run `memo-api auth login` to obtain and save credentials automatically
 
-### OIDC 登录
+Set `MEMO_API_CONFIG_PATH` to use a different configuration file.
+
+### OIDC login
 
 ```bash
-# 登录（打开浏览器完成授权）
+# Sign in (opens a browser for authorization)
 memo-api auth login
 
-# 查看当前登录用户
+# Show the signed-in user
 memo-api auth whoami
 ```
 
-## 用法
+## Usage
 
 ```
-memo-api <资源> <操作> [参数...]
+memo-api <resource> <action> [arguments...]
 ```
 
-### 资源与操作
+### Resources and actions
 
-| 资源 | 操作 | 说明 |
-|------|------|------|
-| `auth` | `login`, `whoami` | 认证与身份查询 |
-| `voc` / `vocabulary` | `get`, `query` | 查询单词 |
-| `note` | `list`, `create`, `update`, `delete` | 助记管理 |
-| `interp` / `interpretation` | `list`, `create`, `update`, `delete` | 释义管理 |
-| `phrase` | `list`, `create`, `update`, `delete` | 短语管理 |
-| `notepad` | `list`, `get`, `create`, `update`, `delete` | 生词本管理 |
-| `study` | `progress`, `today`, `records`, `add`, `advance` | 学习记录 |
+| Resource | Actions | Description |
+|----------|---------|-------------|
+| `auth` | `login`, `whoami` | Authentication and user identity |
+| `voc` / `vocabulary` | `get`, `query` | Vocabulary lookup |
+| `note` | `list`, `create`, `update`, `delete` | Mnemonics |
+| `interp` / `interpretation` | `list`, `create`, `update`, `delete` | Interpretations |
+| `phrase` | `list`, `create`, `update`, `delete` | Phrases |
+| `notepad` | `list`, `get`, `create`, `update`, `delete` | Notepads |
+| `study` | `progress`, `today`, `records`, `add`, `advance` | Study records |
 
-### 常用选项
+### Common options
 
-| 选项 | 说明 |
-|------|------|
+| Option | Description |
+|--------|-------------|
 | `-T, --token` | API Token |
-| `-O, --output` | 输出格式：`json` 或 `column`（默认 `column`） |
-| `--no-color` | 禁用彩色输出 |
-| `--verbose` | 显示请求详情 |
-| `-H, --no-header` | 跳过表头行 |
-| `--fields` | 选择展示字段（逗号分隔，`+` 追加，`-` 移除） |
+| `-O, --output` | Output format: `json` or `column` (default: `column`) |
+| `--no-color` | Disable colored output |
+| `--verbose` | Show request details |
+| `-H, --no-header` | Omit the header row |
+| `--fields` | Select fields (comma-separated; `+` adds fields, `-` removes fields) |
 
-### 示例
+### Examples
 
 ```bash
-# 登录
+# Sign in
 memo-api auth login
 
-# 查询单词
+# Look up a word
 memo-api voc get --spelling=apple
 
-# 查看助记列表
+# List mnemonics
 memo-api note list --word=apple
 
-# 创建助记
+# Create a mnemonic (Chinese note type and content)
 memo-api note create --word=apple --type=谐音 --note="苹果的助记"
 
-# JSON 输出
+# Request JSON output
 memo-api voc get --spelling=apple -O json
 
-# 查看学习进度
+# Show study progress
 memo-api study progress
 
-# 添加单词到学习规划
+# Add words to a study plan
 memo-api study add -w hello -w world
 
-# 查询顽固单词（STICKING）学习记录
+# Query records for stubborn words (STICKING)
 memo-api study records -t STICKING
 
-# 管道输入
+# Pipe JSON input
 echo '{"spelling":"apple"}' | memo-api voc get
 ```
 
-### 高级用法
+### Advanced usage
 
-**管道 JSON 输入**：支持通过 stdin 传入 JSON 作为请求体或参数，传入有效 JSON 时自动跳过命令行参数校验。
+**JSON input through stdin**: supply a JSON request body or parameters through stdin. Valid JSON input skips command-line argument validation.
 
 ```bash
-# stdin JSON 作为请求体
+# Use stdin JSON as the request body
 echo '{"note":{"voc_id":"v123","note_type":"谐音","note":"内容"}}' | memo-api note create
 
-# stdin JSON 提供参数
+# Supply parameters through stdin JSON
 echo '{"id":"note_id"}' | memo-api note delete -f
 ```
 
-**字段筛选**：`--fields` 支持三种模式。
+**Field selection**: `--fields` supports three modes.
 
 ```bash
-# 替换：只显示指定字段
+# Replace: show only the selected fields
 memo-api note list --word=apple --fields=id,note
 
-# 追加：在默认字段基础上增加
+# Add: include extra fields alongside the defaults
 memo-api note list --word=apple --fields=+updated_time
 
-# 移除：从默认字段中排除
+# Remove: exclude selected fields from the full field set
 memo-api note list --word=apple --fields=-status
 ```
 
-**数组参数**：可通过重复 flag 或 stdin 换行输入。
+**Array arguments**: repeat flags or provide newline-separated values through stdin.
 
 ```bash
-# 重复 flag
+# Repeat the flag
 memo-api study add --id v1 --id v2 --id v3
 
-# stdin 换行（- 表示从 stdin 读取）
+# Read newline-separated values from stdin (- means stdin)
 echo -e "v1\nv2\nv3" | memo-api study add --id -
 ```
 
-**调试**：使用 `--verbose` 查看完整的 HTTP 请求和响应。
+**Debugging**: use `--verbose` to inspect the full HTTP request and response.
 
 ```bash
 memo-api voc get --spelling=apple --verbose
 ```
 
-**跳过确认**：删除操作默认会要求确认，使用 `-f` 跳过。
+**Skip confirmation**: delete operations ask for confirmation by default. Use `-f` to skip it.
 
 ```bash
 memo-api note delete id123 -f
 ```
 
-**Shell 自动补全**：启动 shell 时加载补全脚本，支持命令、子命令和选项的 Tab 补全。
+**Shell completion**: load the completion script when your shell starts to enable Tab completion for commands, subcommands, and options.
 
 ```bash
 # bash
@@ -149,7 +153,9 @@ memo-api completion >> ~/.zshrc
 ## Changelog
 
 ### 1.2.0
-- 新增登录命令
 
-### 1.1.0 
-- 支持命令补全
+- Added login commands
+
+### 1.1.0
+
+- Added shell completion

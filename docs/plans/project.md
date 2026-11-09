@@ -12,12 +12,12 @@
 
 TypeScript 升级为 7.0.2，`tsconfig.json` 显式加载 Node 类型，以适配新版编译器的类型加载默认值。其余依赖与锁文件更新至兼容版本，锁文件使用 npm 官方 registry。构建后运行完整模拟 HTTP 测试，不连接真实账号或开放 API。
 
-Chalk 保留 5.x（6.x 要求 Node >=22），Undici 保留 7.x（8.x 要求 Node >=22.19）；Node 类型保留现有 22.x 分支。`package.json` 的 `node >=18` 声明暂不改变，但已有 yargs 18 实际要求 `^20.19.0 || ^22.12.0 || >=23`，string-width 8 要求 Node >=20；此次升级不扩大这一既有兼容性差异。验证使用 Node 24.22.2。
+Chalk 保留 5.x（6.x 要求 Node >=22），Undici 保留 7.x（8.x 要求 Node >=22.19）；Node 类型保留现有 22.x 分支。当前运行时声明已与锁定依赖对齐：yargs 18 要求 `^20.19.0 || ^22.12.0 || >=23`，string-width 8 要求 Node >=20；开发依赖 Undici 7 要求 Node >=20.18.1，不会抬高上述范围。验证使用 Node 24.22.2。
 
 | 类别 | 选型 | 理由 |
 |------|------|------|
 | 语言 | TypeScript (strict) | 完善的类型推导，编译器辅助重构 |
-| 运行时 | Node.js 18+ | 内置 `fetch`，无需额外 HTTP 依赖 |
+| 运行时 | Node.js ^20.19.0 / ^22.12.0 / >=23 | 与 yargs engines 一致，内置 `fetch` |
 | CLI 框架 | yargs | 声明式命令定义，自动生成帮助，内置 shell 补全 |
 | 输出着色 | chalk | 终端颜色分量轻、API 简洁 |
 | 测试 | node:test + node:assert | Node 内置，零依赖 |
@@ -49,8 +49,7 @@ Chalk 保留 5.x（6.x 要求 Node >=22），Undici 保留 7.x（8.x 要求 Node
 
 ```
 memo-api/
-├── bin/
-│   └── memo-api.js           # package.json bin 入口，加载 dist/index.js
+├── dist/index.js            # 编译后的 package.json bin 入口，发布 dist/
 ├── src/
 │   ├── index.ts              # 入口：创建 program，注册子命令，parseAsync
 │   ├── client.ts             # HTTP 客户端：auth、base URL、错误映射
@@ -597,3 +596,9 @@ import('../dist/index.js')
   - [ ] 数组参数重复 flag
   - [ ] 数组参数 stdin `-` 模式
   - [ ] 最大参数限制校验（1000）
+
+### 测试配置隔离（2026-11-09）
+
+npm test 在导入业务模块前加载 test/helpers/isolated-config.mjs，保留顶层及子目录两组测试匹配规则。每个测试进程及其 Node CLI 子进程通过 MEMO_API_CONFIG_PATH 使用自己的临时配置文件，忽略继承的配置路径并移除继承的 MAIMEMO_API_TOKEN；不修改 os.homedir 或 HOME。配置、认证、OIDC 测试继续保留各测试的临时路径及恢复逻辑，单独运行时也先导入隔离模块。退出时只删除自身创建的目录。默认 MockAgent 禁止真实网络连接；模拟 CLI 的合成环境 Token 在隔离预加载后显式设置。
+
+test/home-isolation.test.ts 用合成原配置验证父子进程不读取继承配置、写入不会覆盖原字节，同时验证未预加载测试模块时生产配置的默认路径和显式覆盖契约不变。生产认证逻辑保持原样。

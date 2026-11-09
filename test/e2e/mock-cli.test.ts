@@ -1,7 +1,8 @@
-import { describe, it, before, afterEach } from "node:test";
+import "../helpers/isolated-config.mjs";
+import { describe, it, before, after, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { writeFileSync, unlinkSync } from "node:fs";
+import { writeFileSync, unlinkSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -29,13 +30,15 @@ function execFileAsync(
   });
 }
 
+const fixtureDirectory = mkdtempSync(join(tmpdir(), "memo-api-e2e-"));
+after(() => rmSync(fixtureDirectory, { recursive: true }));
 let mockFile: string;
 
 function setMock(endpoints: MockEndpoint[]): void {
   if (mockFile) {
     try { unlinkSync(mockFile); } catch { /* ok */ }
   }
-  mockFile = join(tmpdir(), `memo-e2e-${randomBytes(4).toString("hex")}.json`);
+  mockFile = join(fixtureDirectory, `memo-e2e-${randomBytes(4).toString("hex")}.json`);
   writeFileSync(mockFile, JSON.stringify({ endpoints }));
 }
 
@@ -44,7 +47,12 @@ async function run(
   opts: { env?: Record<string, string>; input?: string; timeout?: number } = {},
 ): Promise<{ stdout: string; stderr: string; code: number }> {
   try {
-    const result = await execFileAsync("node", ["dist/index.js", ...args], {
+    const result = await execFileAsync("node", ["--input-type=module", "--eval", `
+      // Supply only this test's synthetic token after the isolation preload.
+      process.env.MAIMEMO_API_TOKEN = ${JSON.stringify(opts.env?.MAIMEMO_API_TOKEN ?? "test-token")};
+      process.argv = [process.execPath, 'dist/index.js', ...process.argv.slice(1)];
+      await import('./dist/index.js');
+    `, "--", ...args], {
       env: {
         ...process.env,
         MAIMEMO_API_MOCK: "1",
@@ -812,7 +820,6 @@ describe("no token", () => {
           MAIMEMO_API_MOCK: "1",
           MAIMEMO_API_MOCK_FILE: mockFile,
           MAIMEMO_API_TOKEN: "",
-          MEMO_API_CONFIG_PATH: join(tmpdir(), "memo-api-e2e-nonexistent-config.json"),
         },
         timeout: 5000,
       });
